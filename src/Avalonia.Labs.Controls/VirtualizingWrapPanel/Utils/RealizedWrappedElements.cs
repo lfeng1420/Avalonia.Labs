@@ -171,7 +171,7 @@ namespace Avalonia.Labs.Controls.Utils
             estimatedElementSize = estimatedSize;
 
             // Estimate the element at the start of the viewport.
-            var index = Math.Min((int)(viewportStart.U / estimatedSize.U), itemCount - 1);
+            var index = Math.Min((int)(viewportStart.Height / (MathUtilities.IsZero(estimatedSize.Height) ? 1 : estimatedSize.Height)), itemCount - 1);
             return (index, GetPosition(index, estimatedSize, viewportEnd));
         }
 
@@ -186,6 +186,11 @@ namespace Avalonia.Labs.Controls.Utils
                     break;
 
                 averageULength = newU;
+            }
+
+            if (MathUtilities.IsZero(averageULength))
+            {
+                averageULength = 1;
             }
 
             return new UVSize(viewportEnd.Orientation)
