@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -30,6 +30,7 @@ namespace Avalonia.Labs.Controls
         private static readonly AttachedProperty<bool> ItemIsOwnContainerProperty =
             AvaloniaProperty.RegisterAttached<VirtualizingWrapPanel, Control, bool>("ItemIsOwnContainer");
 
+        private const double EPSILON = 1e-10;
         private static readonly Rect s_invalidViewport = new(double.PositiveInfinity, double.PositiveInfinity, 0, 0);
         private readonly Action<Control, int> _recycleElement;
         private readonly Action<Control> _recycleElementOnItemRemoved;
@@ -421,9 +422,9 @@ namespace Avalonia.Labs.Controls
 
             if(double.IsInfinity(sizeUV.U) || double.IsInfinity(sizeUV.V))
             {
-
             }
 
+            //Trace.TraceError($"size:{sizeUV.Width},{sizeUV.Height} itemCount:{itemCount} lastIndex:{viewport.lastIndex} estimatedSize:{estimatedSize.Width},{estimatedSize.Height}");
             return orientation == Orientation.Horizontal ? new(sizeUV.U, sizeUV.V) : new(sizeUV.V, sizeUV.U);
         }
 
@@ -479,7 +480,7 @@ namespace Avalonia.Labs.Controls
             do
             {
                 // Predict if we will place this item in the next row, and if it's not visible, stop realizing it
-                if (uv.U + size.U > viewport.viewportUVEnd.U && uv.V + maxSizeV > viewport.viewportUVEnd.V)
+                if (uv.U + size.U - viewport.viewportUVEnd.U > EPSILON && uv.V + maxSizeV > viewport.viewportUVEnd.V)
                 {
                     break;
                 }
@@ -497,7 +498,7 @@ namespace Avalonia.Labs.Controls
                     V = v
                 };
 
-                if (uEnd.U > viewport.viewportUVEnd.U)
+                if (uEnd.U - viewport.viewportUVEnd.U > EPSILON)
                 {
                     uv.U = viewport.viewportUVStart.U;
                     v += maxSizeV;
@@ -531,7 +532,7 @@ namespace Avalonia.Labs.Controls
             while (index >= 0)
             {
                 // Predict if this item will be visible, and if not, stop realizing it
-                if (uv.U - size.U < viewport.viewportUVStart.U && uv.V < viewport.viewportUVStart.V)
+                if (uv.U - size.U - viewport.viewportUVStart.U < -EPSILON && uv.V < viewport.viewportUVStart.V)
                 {
                     break;
                 }
@@ -543,7 +544,7 @@ namespace Avalonia.Labs.Controls
                 uv.U -= size.U;
 
                 // Test if the item will be moved to the previous row
-                if (uv.U < viewport.viewportUVStart.U)
+                if (uv.U - viewport.viewportUVStart.U < -EPSILON)
                 {
                     var uLength = viewport.viewportUVEnd.U - viewport.viewportUVStart.U;
                     var uConstraint = (int)(uLength / size.U) * size.U;
